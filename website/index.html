@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Image Share</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #1a3c34;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar .logo {
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .navbar .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar .nav-links li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+            transition: color 0.3s;
+        }
+
+        .navbar .nav-links li a:hover {
+            color: #28a745;
+        }
+
+        /* Main Content Styles */
+        .main-container {
+            max-width: 600px; /* Reduced width for centered single box */
+            margin: 40px auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            flex-direction: column; /* Stack vertically */
+            align-items: center; /* Center vertically */
+        }
+
+        .section {
+            width: 100%;
+            max-width: 500px; /* Set max width for sections */
+            min-width: 300px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .section.hidden {
+            display: none;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a3c34;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        h2 {
+            color: #1a3c34;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        /* Updated Input Field Styles */
+        .form-control {
+            position: relative;
+            margin: 20px 0 40px;
+            width: 100%;
+        }
+
+        .form-control input {
+            background-color: transparent;
+            border: 0;
+            border-bottom: 2px #333 solid;
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .form-control input:focus,
+        .form-control input:valid {
+            outline: none;
+            border-bottom-color: #28a745;
+        }
+
+        .form-control label {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .form-control label span {
+            display: inline-block;
+            font-size: 1em;
+            min-width: 5px;
+            color: #333;
+            transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .form-control input:focus + label span,
+        .form-control input:valid + label span {
+            color: #28a745;
+            transform: translateY(-30px);
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
+        /* Button Styles */
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #result, #imageResult {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        #result.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        #result.error, #imageResult.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Popup Styles */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow: auto;
+            position: relative;
+        }
+
+        .popup-content img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 20px auto;
+            }
+
+            .navbar .nav-links {
+                gap: 10px;
+            }
+
+            .navbar .nav-links li a {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="logo">Secure Image Share</a>
+            <ul class="nav-links">
+                <li><a href="#upload" onclick="showSection('upload')">Upload</a></li>
+                <li><a href="#retrieve" onclick="showSection('retrieve')">Retrieve</a></li>
+                <li><a href="#">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <h1>Secure Image Share</h1>
+    <div class="main-container">
+        <div class="section" id="upload">
+            <h2>Upload Image</h2>
+            <div class="form-control">
+                <input type="text" id="uploadId" required>
+                <label>
+                    <span style="transition-delay:0ms">I</span><span style="transition-delay:50ms">D</span>
+                </label>
+            </div>
+            <div class="form-control">
+                <input type="password" id="uploadPassword" required>
+                <label>
+                    <span style="transition-delay:0ms">P</span><span style="transition-delay:50ms">a</span><span style="transition-delay:100ms">s</span><span style="transition-delay:150ms">s</span><span style="transition-delay:200ms">w</span><span style="transition-delay:250ms">o</span><span style="transition-delay:300ms">r</span><span style="transition-delay:350ms">d</span>
+                </label>
+            </div>
+            <label for="imageFile">Select Image:</label>
+            <input type="file" id="imageFile" accept="image/jpeg">
+            <button onclick="uploadImage()">Upload Image</button>
+            <div id="result"></div>
+        </div>
+        <div class="section hidden" id="retrieve">
+            <h2>Retrieve Image</h2>
+            <div class="form-control">
+                <input type="text" id="retrieveId" required>
+                <label>
+                    <span style="transition-delay:0ms">I</span><span style="transition-delay:50ms">D</span>
+                </label>
+            </div>
+            <div class="form-control">
+                <input type="password" id="retrievePassword" required>
+                <label>
+                    <span style="transition-delay:0ms">P</span><span style="transition-delay:50ms">a</span><span style="transition-delay:100ms">s</span><span style="transition-delay:150ms">s</span><span style="transition-delay:200ms">w</span><span style="transition-delay:250ms">o</span><span style="transition-delay:300ms">r</span><span style="transition-delay:350ms">d</span>
+                </label>
+            </div>
+            <button onclick="retrieveImage()">Retrieve Image</button>
+            <div id="imageResult"></div>
+        </div>
+    </div>
+
+    <!-- Popup for Image Display -->
+    <div class="popup" id="imagePopup">
+        <div class="popup-content">
+            <span class="close-btn" onclick="closePopup()">&times;</span>
+            <div id="popupImage"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://hpyui0eqtb.execute-api.us-east-1.amazonaws.com/prod';
+
+        function showSection(sectionId) {
+            const uploadSection = document.getElementById('upload');
+            const retrieveSection = document.getElementById('retrieve');
+            
+            if (sectionId === 'upload') {
+                uploadSection.classList.remove('hidden');
+                retrieveSection.classList.add('hidden');
+            } else if (sectionId === 'retrieve') {
+                uploadSection.classList.add('hidden');
+                retrieveSection.classList.remove('hidden');
+            }
+        }
+
+        function closePopup() {
+            document.getElementById('imagePopup').style.display = 'none';
+        }
+
+        async function uploadImage() {
+            const id = document.getElementById('uploadId').value;
+            const password = document.getElementById('uploadPassword').value;
+            const fileInput = document.getElementById('imageFile');
+            const resultDiv = document.getElementById('result');
+
+            if (!password || !fileInput.files[0]) {
+                resultDiv.innerHTML = 'Password and image are required.';
+                resultDiv.className = 'error';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.type !== 'image/jpeg') {
+                resultDiv.innerHTML = 'Please select a JPEG image.';
+                resultDiv.className = 'error';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result;
+                const payload = {
+                    id: id || undefined,
+                    password: password,
+                    image: base64Image
+                };
+
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    resultDiv.innerHTML = data;
+                    resultDiv.className = 'success';
+                } catch (error) {
+                    resultDiv.innerHTML = `Error: ${error.message}`;
+                    resultDiv.className = 'error';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function retrieveImage() {
+            const id = document.getElementById('retrieveId').value;
+            const password = document.getElementById('retrievePassword').value;
+            const imageResultDiv = document.getElementById('imageResult');
+            const popup = document.getElementById('imagePopup');
+            const popupImage = document.getElementById('popupImage');
+
+            if (!id || !password) {
+                imageResultDiv.innerHTML = 'ID and password are required.';
+                imageResultDiv.className = 'error';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}?id=${encodeURIComponent(id)}&password=${encodeURIComponent(password)}`, {
+                    method: 'GET'
+                });
+                const data = await response.json();
+                if (response.status === 200) {
+                    popupImage.innerHTML = `<img src="${data}" alt="Retrieved Image">`;
+                    popup.style.display = 'flex';
+                    imageResultDiv.innerHTML = '';
+                    imageResultDiv.className = '';
+                } else {
+                    imageResultDiv.innerHTML = data;
+                    imageResultDiv.className = 'error';
+                }
+            } catch (error) {
+                imageResultDiv.innerHTML = `Error: ${error.message}`;
+                imageResultDiv.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>
